@@ -3,7 +3,7 @@
 // #define static ID
 #define MY_NODE_ID 11
 // Enable debug prints to serial monitor
-// #define MY_DEBUG
+#define MY_DEBUG
 
 // Enable and select radio type attached
 #define MY_RADIO_NRF24
@@ -30,7 +30,7 @@
 #define ALTITUDE_CHILD 5
 #define DEWPOINT_CHILD 6
 
-unsigned long SLEEP_TIME = 30000; // Sleep time between reads (in milliseconds)
+unsigned long SLEEP_TIME = 60000; // Sleep time between reads (in milliseconds)
 unsigned long LAST_MEASURE=0; // Marker for last Measure (in milliseconds)
 /* ==== BME Global Variables ==== */
 BME280I2C bme(0x1,0x1,0x1,B11,B101,B000,false,0x77); // Default : forced mode, standby time = 1000 ms
