@@ -61,7 +61,7 @@ void before()
 void presentation()
 {
 	// Send the sketch version information to the gateway and Controller
-	sendSketchInfo("MyTempHumLightRelais", "1.0");
+	sendSketchInfo("MyTempHumLightRelais", "1.1");
 
     for (int sensor=1, pin=RELAY_1; sensor<=NUMBER_OF_RELAYS; sensor++, pin++) {
 		// Register all sensors to gw (they will be created as child devices)
