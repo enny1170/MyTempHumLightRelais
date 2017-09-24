@@ -22,7 +22,7 @@
 #define NUMBER_OF_RELAYS 1 // Total number of attached relays
 #define RELAY_ON 1  // GPIO value to write to turn on attached relay
 #define RELAY_OFF 0 // GPIO value to write to turn off attached relay
-#define RELAY_PULSE 10 // 0 for standard Relay >0 minimum Pilse Time in ms for latching Relay
+#define RELAY_PULSE 0 // 0 for standard Relay >0 minimum Pilse Time in ms for latching Relay
 
 #define BARO_CHILD 2
 #define TEMP_CHILD 3
@@ -30,7 +30,7 @@
 #define ALTITUDE_CHILD 5
 #define DEWPOINT_CHILD 6
 
-unsigned long SLEEP_TIME = 60000; // Sleep time between reads (in milliseconds)
+unsigned long SLEEP_TIME = 120000; // Sleep time between reads (in milliseconds)
 unsigned long LAST_MEASURE=0; // Marker for last Measure (in milliseconds)
 /* ==== BME Global Variables ==== */
 BME280I2C bme(0x1,0x1,0x1,B11,B101,B000,false,0x77); // Default : forced mode, standby time = 1000 ms
@@ -72,7 +72,7 @@ void presentation()
     present(BARO_CHILD,V_PRESSURE);
     present(TEMP_CHILD,V_TEMP);
     present(HUM_CHILD,V_HUM);
-    present(ALTITUDE_CHILD,V_CUSTOM);
+    //present(ALTITUDE_CHILD,V_CUSTOM);
     present(DEWPOINT_CHILD,V_CUSTOM);
     present(CHILD_ID_LIGHT, V_LIGHT_LEVEL);
 }
@@ -99,25 +99,34 @@ void loop()
 
         // Read Environment
         float temp(NAN), hum(NAN), pres(NAN);
-        uint8_t pressureUnit(3);                                           // unit: B000 = Pa, B001 = hPa, B010 = Hg, B011 = atm, B100 = bar, B101 = torr, B110 = N/m^2, B111 = psi
+        uint8_t pressureUnit(B001);                                           // unit: B000 = Pa, B001 = hPa, B010 = Hg, B011 = atm, B100 = bar, B101 = torr, B110 = N/m^2, B111 = psi
         bme.read(pres, temp, hum, metric, pressureUnit);                   // Parameters: (float& pressure, float& temp, float& humidity, bool celsius = false, uint8_t pressureUnit = 0x0)
         float alt = bme.alt(metric);
         float dew = bme.dew(metric);
         Serial.print("Temp: ");
         Serial.println(temp);
-        send(temp_msg,temp);
+        send(temp_msg.set(temp,1));
         Serial.print("Humidity: ");
         Serial.println(hum);
-        send(hum_msg,hum);
+        send(hum_msg.set(hum,1));
         Serial.print("Pressure: ");
         Serial.println(pres);
-        send(pres_msg,pres);
-        Serial.print("Altitude: ");
-        Serial.println(alt);
-        send(alt_msg,alt);
+        send(pres_msg.set(pres,1));
+        //Serial.print("Altitude: ");
+        //Serial.println(alt);
+        //send(alt_msg.set(alt,1));
         Serial.print("Dewpoint: ");
         Serial.println(dew);
-        send(dew_msg,dew);
+        send(dew_msg.set(dew,1));
+
+        // Read Relais state
+        for (int sensor=1, pin=RELAY_1; sensor<=NUMBER_OF_RELAYS; sensor++, pin++) {
+            // send all sensors to gw (they will be created as child devices)
+            MyMessage rel_msg(sensor ,S_BINARY);
+            send(rel_msg.set(loadState(sensor)?RELAY_ON:RELAY_OFF));
+        }
+            
+
         LAST_MEASURE=millis();
     }
     
@@ -127,8 +136,14 @@ void loop()
 void receive(const MyMessage &message)
 {
 	// We only expect one type of message from controller. But we better check anyway.
-	if (message.type==V_STATUS) {
-		// Change relay state
+	if (message.type==V_STATUS||message.type==S_BINARY) {
+        // Write some debug info
+		Serial.print("Incoming change for sensor:");
+		Serial.print(message.sensor);
+		Serial.print(", New status: ");
+		Serial.println(message.getBool());
+
+        // Change relay state
         if (RELAY_PULSE==0){
             digitalWrite(message.sensor-1+RELAY_1, message.getBool()?RELAY_ON:RELAY_OFF);
         }else{
@@ -137,12 +152,18 @@ void receive(const MyMessage &message)
             digitalWrite(message.sensor-1+RELAY_1,RELAY_OFF);
         }
 		// Store state in eeprom
-		saveState(message.sensor, message.getBool());
-		// Write some debug info
-		Serial.print("Incoming change for sensor:");
-		Serial.print(message.sensor);
-		Serial.print(", New status: ");
-		Serial.println(message.getBool());
+        saveState(message.sensor, message.getBool());
+        Serial.print("Saved State: ");
+        Serial.println(message.getBool());
+        MyMessage relayMsg(message.sensor ,S_BINARY);
+        send(relayMsg,message.getBool());
+        // Read lightLevel
+        int16_t lightLevel = (analogRead(LIGHT_SENSOR_ANALOG_PIN))/10.23;
+        Serial.print("Light: ");
+        Serial.println(lightLevel);
+        send(light_msg.set(lightLevel));
+        lastLightLevel = lightLevel;
+
 	}
 }
 
