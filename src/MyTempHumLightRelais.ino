@@ -155,8 +155,9 @@ void receive(const MyMessage &message)
         saveState(message.sensor, message.getBool());
         Serial.print("Saved State: ");
         Serial.println(message.getBool());
-        MyMessage relayMsg(message.sensor ,S_BINARY);
-        send(relayMsg,message.getBool());
+        delay(10);
+        //MyMessage relayMsg(message.sensor ,S_BINARY);
+        //send(relayMsg,loadState(message.sensor)?RELAY_ON:RELAY_OFF);
         // Read lightLevel
         int16_t lightLevel = (analogRead(LIGHT_SENSOR_ANALOG_PIN))/10.23;
         Serial.print("Light: ");
