@@ -30,6 +30,8 @@
 #define ALTITUDE_CHILD 5
 #define DEWPOINT_CHILD 6
 
+#define INTERRUPT_MINIMUM_TIME 50
+
 unsigned long SLEEP_TIME = 120000; // Sleep time between reads (in milliseconds)
 unsigned long LAST_MEASURE=0; // Marker for last Measure (in milliseconds)
 /* ==== BME Global Variables ==== */
@@ -37,6 +39,8 @@ BME280I2C bme(0x1,0x1,0x1,B11,B101,B000,false,0x77); // Default : forced mode, s
 // Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off,
 bool metric = true;
 /* ==== END BME Global Variables ==== */
+
+unsigned long lastInterrupt=0;
 
 MyMessage light_msg(CHILD_ID_LIGHT, V_LIGHT_LEVEL);
 MyMessage temp_msg(TEMP_CHILD,V_TEMP);
@@ -61,7 +65,7 @@ void before()
 void presentation()
 {
 	// Send the sketch version information to the gateway and Controller
-	sendSketchInfo("MyTempHumLightRelais", "1.1");
+	sendSketchInfo("MyTempHumLightRelais", "1.2");
 
     for (int sensor=1, pin=RELAY_1; sensor<=NUMBER_OF_RELAYS; sensor++, pin++) {
 		// Register all sensors to gw (they will be created as child devices)
@@ -78,11 +82,37 @@ void presentation()
 }
 
 void setup(){
-    while(!bme.begin()){
-        Serial.println("Could not find BME280 sensor!");
-        delay(1000);
-    }
+    bme.begin();
+    // while(!bme.begin()){
+    //     Serial.println("Could not find BME280 sensor!");
+    //     delay(1000);
+    // }
+    pinMode(2,INPUT_PULLUP);
+    attachInterrupt(INT0,toggleSwitch,CHANGE);
+}
 
+void toggleSwitch()
+{
+         MyMessage rel_msg(1, S_BINARY);
+        if (millis() - lastInterrupt > INTERRUPT_MINIMUM_TIME)
+        {
+            //Serial.println("Interrupt received");
+            if (digitalRead(RELAY_1) == LOW)
+            {
+                //Serial.println("Switch Relay On");
+                digitalWrite(RELAY_1, HIGH);
+                saveState(1, RELAY_ON);
+            }
+            else
+            {
+                //Serial.println("Switch Relay Off");
+                digitalWrite(RELAY_1, LOW);
+                saveState(1, RELAY_OFF);
+            }
+            //Serial.println("Send new State");
+            send(rel_msg.set(loadState(1) ? RELAY_ON : RELAY_OFF));
+        }
+        lastInterrupt=millis();
 }
 
 void loop()
