@@ -132,6 +132,7 @@ void loop()
     
    
 }
+#pragma region receive
 
 void receive(const MyMessage &message)
 {
@@ -165,7 +166,9 @@ void receive(const MyMessage &message)
         send(light_msg.set(lightLevel));
         lastLightLevel = lightLevel;
 
-	}
+    }
+    
+    #pragma endregion
 }
 
 
