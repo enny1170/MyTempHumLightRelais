@@ -164,6 +164,7 @@ void loop()
             }
             //Serial.println("Send new State");
             send(rel_msg.set(loadState(1) ? RELAY_ON : RELAY_OFF));
+            interruptTriggered=false;
         }
 
         LAST_MEASURE=millis();
