@@ -172,6 +172,11 @@ NodeManager. Just uncomment the settings you need and the sensors you want to ad
 #define NODEMANAGER_OTA_CONFIGURATION OFF
 #define NODEMANAGER_SERIAL_INPUT OFF
 
+// for NRF24DUINO you have to specify a different CE-Pin for NRF24L01+
+#define MY_RF24_CE_PIN 7
+
+#define REMOTE_ID 14
+#define REMOTE_CHILD 1
 // import NodeManager library (a nodeManager object will be then made available)
 #include <MySensors_NodeManager.h>
 
@@ -447,4 +452,9 @@ void receiveTime(unsigned long ts) {
 void toggleRelay(Sensor* sensor)
 {
   relay.toggleStatus();
+  // try to notify Remote_Node,Remote_Child to also toggle
+  MyMessage remeoteMsg(REMOTE_CHILD,V_STATUS);
+  remeoteMsg.setDestination(REMOTE_ID);
+  remeoteMsg.setType(C_SET);
+  send(remeoteMsg);
 }
