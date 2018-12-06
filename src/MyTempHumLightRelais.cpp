@@ -175,6 +175,9 @@ NodeManager. Just uncomment the settings you need and the sensors you want to ad
 // import NodeManager library (a nodeManager object will be then made available)
 #include <MySensors_NodeManager.h>
 
+// declare hooking Helper Methods
+void toggleRelay(Sensor* sensor);
+
 /***********************************
  * Add your sensors
  */
@@ -238,8 +241,8 @@ SensorRelay relay(3);
 //#include <sensors/SensorHTU21D.h>
 //SensorHTU21D htu21;
 
-//#include <sensors/SensorInterrupt.h>
-//SensorInterrupt interrupt(3);
+#include <sensors/SensorInterrupt.h>
+SensorInterrupt interrupt(2);
 
 //#include <sensors/SensorDoor.h>
 //SensorDoor door(3);
@@ -398,6 +401,11 @@ void before() {
   // power all the nodes through dedicated pins
   //nodeManager.setPowerManager(power);
 
+  interrupt.setInterruptHook(&toggleRelay);
+  interrupt.setPinInitialValue(HIGH);
+  interrupt.setInterruptMode(FALLING);
+  //interrupt.setWaitAfterInterrupt(100);
+  nodeManager.setInterruptDebounce(1000);
   // call NodeManager before routine
   nodeManager.before();
 }
@@ -435,3 +443,8 @@ void receiveTime(unsigned long ts) {
   nodeManager.receiveTime(ts);
 }
 #endif
+
+void toggleRelay(Sensor* sensor)
+{
+  relay.toggleStatus();
+}
