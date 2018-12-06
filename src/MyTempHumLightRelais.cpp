@@ -33,7 +33,7 @@ NodeManager. Just uncomment the settings you need and the sensors you want to ad
 #define SKETCH_NAME "MyTempHumLightRelais"
 #define SKETCH_VERSION "1.8"
 //#define MY_DEBUG
-#define MY_NODE_ID 11
+#define MY_NODE_ID 99
 
 // NRF24 radio settings
 #define MY_RADIO_NRF24
