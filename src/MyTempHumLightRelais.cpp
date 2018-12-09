@@ -31,9 +31,9 @@ NodeManager. Just uncomment the settings you need and the sensors you want to ad
 
 // General settings
 #define SKETCH_NAME "MyTempHumLightRelais"
-#define SKETCH_VERSION "1.8"
+#define SKETCH_VERSION "1.10"
 //#define MY_DEBUG
-#define MY_NODE_ID 99
+#define MY_NODE_ID 11
 
 // NRF24 radio settings
 #define MY_RADIO_NRF24
@@ -173,7 +173,9 @@ NodeManager. Just uncomment the settings you need and the sensors you want to ad
 #define NODEMANAGER_SERIAL_INPUT OFF
 
 // for NRF24DUINO you have to specify a different CE-Pin for NRF24L01+
-#define MY_RF24_CE_PIN 7
+#ifdef NRF24DUINO
+    #define MY_RF24_CE_PIN 7
+#endif
 
 #define REMOTE_ID 14
 #define REMOTE_CHILD 1
@@ -195,8 +197,8 @@ void toggleRelay(Sensor* sensor);
 //#include <sensors/SensorConfiguration.h>
 //SensorConfiguration configuration;
 
-#include <sensors/SensorSignal.h>
-SensorSignal signal;
+//#include <sensors/SensorSignal.h>
+//SensorSignal signal;
 
 //#include <sensors/SensorAnalogInput.h>
 //SensorAnalogInput analog(A0);
@@ -390,7 +392,7 @@ void before() {
   // report measures of every attached sensors every 10 seconds
   //nodeManager.setReportIntervalSeconds(10);
   // report measures of every attached sensors every 10 minutes
-  //nodeManager.setReportIntervalMinutes(10);
+  nodeManager.setReportIntervalMinutes(15);
   // set the node to sleep in 30 seconds cycles
   //nodeManager.setSleepSeconds(30);
   // set the node to sleep in 5 minutes cycles
@@ -423,6 +425,7 @@ void presentation() {
 
 // setup
 void setup() {
+  pinMode(2,INPUT_PULLUP);
   // call NodeManager setup routine
   nodeManager.setup();
 }
@@ -456,5 +459,6 @@ void toggleRelay(Sensor* sensor)
   MyMessage remeoteMsg(REMOTE_CHILD,V_STATUS);
   remeoteMsg.setDestination(REMOTE_ID);
   remeoteMsg.setType(C_SET);
+  remeoteMsg.set(relay.getStatus());
   send(remeoteMsg);
 }
